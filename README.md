@@ -107,10 +107,9 @@ README.md	Project description, features, and usage instructions.
 
 ---
 
-👨‍💻 Author
+## 👨‍💻 Author
 
-Marwan
+Mustafa Mahmoud Hussein  
 
-> "Through this project, I learned how to progress from simple code to a more complete system for managing students and quizzes."
-
+> "Through this project, I learned how to progress from writing simple code to building a more complete system for managing students and quizzes."
 
