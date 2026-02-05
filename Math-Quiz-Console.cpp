@@ -9,7 +9,6 @@
 
 #include <thread> // sleep_for
 #include <chrono> // seconds
-// #include <windows.h> // system("cls")
 
 using namespace std;
 enum enlevels
@@ -27,15 +26,31 @@ enum enOpType
     divi = 4,
     mix = 5
 };
+enum enGender
+{
+    male = 1,
+    female = 0
+};
+enum enSelectionList
+{
+    enGenerateQuiz = 1,
+    enQuizInfo = 2,
+    enstartQuizz = 3,
+    displayAllstudent = 4,
+    quiryUsingID = 5,
+    DeletStudentUsingID = 6,
+    Exit = 7
+};
 
 struct stStudentInfo
 {
 
     string FullName;
-    int Age;
+    int Age = 18;
     string ID;
-    bool six;
+    enGender Gender = enGender::male;
     int TotalMark = 0;
+    bool IsPass = false;
 };
 
 struct stQustionInfo
@@ -61,7 +76,7 @@ struct stQuizInfo
     enOpType QuizOPtype = enOpType::add;
     short NumOfRightAnswer = 0;
     short NumOfWrongAnswer = 0;
-    bool IsPass = true;
+    bool IsPass = false;
 };
 
 // functions of strudent info
@@ -92,18 +107,85 @@ int getStudentAge()
 string getStusentId()
 {
     string Id;
-    cout << "enter your Id : ";
+    cout << "enter your Id XXXX: ";
     cin >> Id;
     return Id;
 }
 
-bool getStudentSix()
+enGender getStudentGender()
 {
 
-    bool six = true;
-    cout << "enter your six (male[1] and female[0])  1/0: ";
-    cin >> six;
-    return six;
+    int sex = 1;
+    do
+    {
+        cout << "enter your sex (male[1] and female[0])  1/0: ";
+        cin >> sex;
+
+    } while (sex != 1 && sex != 0);
+
+    return enGender(sex);
+}
+
+string tab(int numoftab)
+{
+    string tab = "";
+    while (numoftab--)
+    {
+        tab += "    ";
+    }
+    return tab;
+}
+
+void ListofChoices()
+{
+    cout << string(55, '=') << "\n";
+    cout << setw(30) << right << "=== The Menu ===" << "\n";
+    cout << string(55, '=') << "\n\n";
+
+    cout << left << setw(30) << "1. Generate Quiz"
+         << "\n"
+         << left << setw(30) << "2. Quiz Info"
+         << "\n"
+         << left << setw(30) << "3. Start Quiz"
+         << "\n"
+         << left << setw(30) << "4. Display All Students"
+         << "\n"
+         << left << setw(30) << "5. Query Using ID"
+         << "\n"
+         << left << setw(30) << "6. Delete Student Using ID"
+         << "\n"
+         << left << setw(30) << "7. Exit"
+         << "\n";
+
+    cout << string(30, '_') << endl;
+}
+
+int choiseSelectionList()
+{
+    int num = 1;
+    do
+
+    {
+
+        ListofChoices();
+
+        cin >> num;
+        if (num > 7 || num < 1)
+        {
+            system("cls");
+
+            cout << "plase enter number between [1:7] \n";
+        }
+
+    } while (num > 7 || num < 1);
+
+    return num;
+}
+
+enSelectionList getSelectionList()
+{
+
+    return enSelectionList(choiseSelectionList());
 }
 
 int HowManyStudent()
@@ -116,7 +198,7 @@ int HowManyStudent()
         cout << "How many students do you want to teach them?[1:100] ";
         cin >> NumOfStudent;
 
-    } while (NumOfStudent < 0 && NumOfStudent > 100);
+    } while (NumOfStudent < 0 || NumOfStudent > 100);
 
     return NumOfStudent;
 }
@@ -164,16 +246,6 @@ int enterOpType()
     return number;
 }
 
-string tab(int numoftab)
-{
-    string tab = "";
-    while (numoftab--)
-    {
-        tab += "    ";
-    }
-    return tab;
-}
-
 enlevels getLevelQuiz()
 {
 
@@ -198,6 +270,8 @@ int CalculateExpression(int num, int num2, enOpType op)
         return (num / num2);
     case enOpType::mul:
         return (num * num2);
+    default:
+        return (num + num2);
     }
 }
 
@@ -278,9 +352,21 @@ void ViewQuestionStatus(stQustionInfo QustionInfo)
     }
 }
 
-bool ispassQuiz(stQuizInfo &QuizInfo)
+bool ispassQuiz(stQuizInfo QuizInfo)
 {
-    return (QuizInfo.IsPass = (QuizInfo.NumOfRightAnswer >= QuizInfo.NumOfWrongAnswer));
+    return ((QuizInfo.NumOfRightAnswer >= QuizInfo.NumOfWrongAnswer));
+}
+
+string GetWordSucceededOrFailed(bool ResultExam)
+{
+    if (ResultExam)
+    {
+        return "Succeeded";
+    }
+    else
+    {
+        return "Failed";
+    }
 }
 
 void signOfFinalQuiz(bool ispass)
@@ -304,9 +390,9 @@ void signOfFinalQuiz(bool ispass)
     cout << tab(5) << string(60, '-') << endl;
 }
 
-string NameOfSix(bool Six)
+string NameOfGender(enGender Sex)
 {
-    if (Six)
+    if (Sex == enGender::male)
     {
         return "male";
     }
@@ -316,25 +402,45 @@ string NameOfSix(bool Six)
     }
 }
 
-void showStudentInfo(stStudentInfo StusentInfo, int numOfStudent)
+float CalculatePercentage(int Marks, int NumOfQustion)
 {
+
+    float percentage = ((float)Marks / NumOfQustion) * 100;
+
+    return percentage;
+}
+
+void showStudentInfo(stQuizInfo QuizInfo, int numOfStudent)
+{
+    float percentage = CalculatePercentage(QuizInfo.StudentInfo[numOfStudent].TotalMark, QuizInfo.NumOfQuestion);
+
     cout << "\n"
          << tab(5) << " -------------------- Student [" << numOfStudent + 1 << "] -------------------- \n\n";
 
-    cout << tab(7) << left << setw(15) << "Full Name" << " : " << StusentInfo.FullName << endl;
-    cout << tab(7) << left << setw(15) << "Age" << " : " << StusentInfo.Age << endl;
-    cout << tab(7) << left << setw(15) << "ID" << " : " << StusentInfo.ID << endl;
-    cout << tab(7) << left << setw(15) << "Gender" << " : " << NameOfSix(StusentInfo.six) << endl;
-
+    cout << tab(7) << left << setw(15) << "Full Name" << " : " << QuizInfo.StudentInfo[numOfStudent].FullName << endl;
+    cout << tab(7) << left << setw(15) << "Age" << " : " << QuizInfo.StudentInfo[numOfStudent].Age << endl;
+    cout << tab(7) << left << setw(15) << "ID" << " : " << QuizInfo.StudentInfo[numOfStudent].ID << endl;
+    cout << tab(7) << left << setw(15) << "Gender" << " : " << NameOfGender(QuizInfo.StudentInfo[numOfStudent].Gender) << endl;
+    cout << tab(7) << left << setw(15) << "Mark" << " : " << QuizInfo.StudentInfo[numOfStudent].TotalMark << endl;
+    cout << tab(7) << left << setw(15) << "percentage" << " : " << percentage << '%' << endl;
+    cout << tab(7) << left << setw(15) << "Student status" << " : " << GetWordSucceededOrFailed(QuizInfo.StudentInfo[numOfStudent].IsPass) << endl;
     cout << "\n"
          << tab(5) << " -------------------------------------------------------\n";
 }
 
 void ShowFinalQuizResult(stQuizInfo QuizInfo, int numStudent)
 {
-
     signOfFinalQuiz(ispassQuiz(QuizInfo));
-    showStudentInfo(QuizInfo.StudentInfo[numStudent], numStudent);
+    showStudentInfo(QuizInfo, numStudent);
+}
+
+void ShowQuizeInfo(stQuizInfo QuizInfo)
+{
+
+    cout << tab(5) << left << setw(20) << string(55, '=') << "\n";
+    ;
+    cout << tab(7) << left << setw(20) << "Basic information for the Quiz\n";
+    cout << tab(5) << left << setw(20) << string(55, '=') << "\n";
 
     cout << endl
          << tab(5) << string(55, '-') << "\n";
@@ -347,12 +453,6 @@ void ShowFinalQuizResult(stQuizInfo QuizInfo, int numStudent)
     cout << tab(7) << left << setw(20) << "Question Level"
          << " : " << LevelNume(QuizInfo.Quizlevel) << endl;
 
-    cout << tab(7) << left << setw(20) << "Right Answers"
-         << " : " << QuizInfo.NumOfRightAnswer << endl;
-
-    cout << tab(7) << left << setw(20) << "Wrong Answers"
-         << " : " << QuizInfo.NumOfWrongAnswer << endl;
-
     cout << tab(5) << string(55, '-') << "\n";
 }
 
@@ -362,23 +462,35 @@ stStudentInfo getStudentInfo(stStudentInfo &StusentInfo)
     StudentInfo.FullName = getStudentName();
     StudentInfo.Age = getStudentAge();
     StudentInfo.ID = getStusentId();
-    StudentInfo.six = getStudentSix();
+    StudentInfo.Gender = getStudentGender();
 
     return StudentInfo;
 }
 
-stQustionInfo GenerateQuestion(enlevels level, enOpType optype, int i)
+stQustionInfo CreateQuestion(enlevels level, enOpType optype)
 {
     stQustionInfo QustionInfo;
 
     QustionInfo.FirstNum = getNumAccordingLevel(level);
     QustionInfo.SecondNum = getNumAccordingLevel(level);
     QustionInfo.QuestionOPtype = getyOpTypeQuiz(whatOptypeOfQuestion(optype));
-    QustionInfo.correctAnswer = CalculateExpression(QustionInfo.FirstNum, QustionInfo.SecondNum, QustionInfo.QuestionOPtype);
-    showQuestion(QustionInfo, i);
-    QustionInfo.StudentAnswer = getStudentAnswer();
-    QustionInfo.isStudentAnswerCorrect = isAnswerCorrect(QustionInfo.correctAnswer, QustionInfo.StudentAnswer);
 
+    return QustionInfo;
+}
+
+int AskStudent(stQustionInfo QustionInfo, int i)
+{
+    showQuestion(QustionInfo, i);
+
+    return getStudentAnswer();
+}
+
+stQustionInfo GenerateQuestion(enlevels level, enOpType optype, int i)
+{
+    stQustionInfo QustionInfo;
+
+    QustionInfo = CreateQuestion(level, optype);
+    QustionInfo.correctAnswer = CalculateExpression(QustionInfo.FirstNum, QustionInfo.SecondNum, QustionInfo.QuestionOPtype);
     return QustionInfo;
 }
 
@@ -395,38 +507,50 @@ void UpdataToNumOfCorrectAnsAndnot(stQuizInfo &QuizInfo, short numQuestion)
     }
 }
 
-void GenerateQuiz(stQuizInfo &QuizInfo)
+void GenerateQuizAndExamStudent(stQuizInfo &QuizInfo)
 {
 
     for (int i = 0; i < QuizInfo.NumOfQuestion; i++)
     {
 
         QuizInfo.Qustion[i] = GenerateQuestion(QuizInfo.Quizlevel, QuizInfo.QuizOPtype, i);
+        QuizInfo.Qustion[i].StudentAnswer = AskStudent(QuizInfo.Qustion[i], i);
+        QuizInfo.Qustion[i].isStudentAnswerCorrect = isAnswerCorrect(QuizInfo.Qustion[i].correctAnswer, QuizInfo.Qustion[i].StudentAnswer);
         ViewQuestionStatus(QuizInfo.Qustion[i]);
         UpdataToNumOfCorrectAnsAndnot(QuizInfo, i);
     }
+    QuizInfo.IsPass = ispassQuiz(QuizInfo);
 }
 
 void displayMarksAllStudent(stQuizInfo QuizInfo)
 {
+
     cout << left << setw(20) << "Name"
          << setw(10) << "Marks"
          << setw(15) << "ID"
-         << setw(10) << "Gender" << endl;
+         << setw(10) << "Gender"
+         << setw(15) << "percentage"
+         << setw(15) << "Student status"
+         << endl;
 
-    cout << string(55, '-') << endl;
+    cout << string(80, '-') << endl;
 
     for (int i = 0; i < QuizInfo.NumOfStudent; i++)
     {
+        float percentage = CalculatePercentage(QuizInfo.StudentInfo[i].TotalMark, QuizInfo.NumOfQuestion);
+        string spercentage = to_string(percentage) + "%";
+
         cout << left << setw(20) << QuizInfo.StudentInfo[i].FullName
              << setw(10) << QuizInfo.StudentInfo[i].TotalMark
              << setw(15) << QuizInfo.StudentInfo[i].ID
-             << setw(10) << NameOfSix(QuizInfo.StudentInfo[i].six)
+             << setw(10) << NameOfGender(QuizInfo.StudentInfo[i].Gender)
+             << setw(15) << spercentage
+             << setw(15) << GetWordSucceededOrFailed(QuizInfo.StudentInfo[i].IsPass)
              << endl;
     }
 }
 
-void game()
+stQuizInfo ChoiseInfoQuiz()
 {
     stQuizInfo QuizInfo;
 
@@ -436,36 +560,199 @@ void game()
     QuizInfo.QuizOPtype = getyOpTypeQuiz(enterOpType());
     QuizInfo.Quizlevel = getLevelQuiz();
 
-    system("cls");
+    cout << "\nSuccessfully created the exam\n";
+
+    return QuizInfo;
+}
+
+void startQuizz(stQuizInfo &QuizInfo)
+{
 
     for (int i = 0; i < QuizInfo.NumOfStudent; i++)
     {
 
         QuizInfo.StudentInfo[i] = getStudentInfo(QuizInfo.StudentInfo[i]);
-        GenerateQuiz(QuizInfo);
+        GenerateQuizAndExamStudent(QuizInfo);
         QuizInfo.StudentInfo[i].TotalMark = QuizInfo.NumOfRightAnswer;
+        QuizInfo.StudentInfo[i].IsPass = QuizInfo.IsPass;
         ShowFinalQuizResult(QuizInfo, i);
         QuizInfo.NumOfRightAnswer = 0;
         QuizInfo.NumOfWrongAnswer = 0;
+        QuizInfo.IsPass = false;
 
         this_thread::sleep_for(chrono::seconds(5)); // يوقف خمس ثواني
 
         system("cls");
     }
+    cout << tab(7) << "Exams are over\n";
+}
 
-    char display = 'y';
+string enterIdStudent(string message)
+{
+    string ID;
+    cout << message;
+    cin >> ID;
+    return ID;
+}
 
-    cout << "do you want display marks all students ? ";
-    cin >> display;
-    if (display == 'y' || display == 'Y')
+int SearchPostionStudent(stQuizInfo QuizInfo, string ID)
+{
+    for (int i = 0; i < QuizInfo.NumOfStudent; i++)
     {
-
-        displayMarksAllStudent(QuizInfo);
+        if (QuizInfo.StudentInfo[i].ID == ID)
+        {
+            return i;
+        }
     }
+    return -1;
+}
+
+void displayInfoStudentUsingID(stQuizInfo QuizInfo, string ID)
+{
+    int pos = SearchPostionStudent(QuizInfo, ID);
+
+    if (pos == -1)
+    {
+        cout << "the student is not exist\n";
+        return;
+    }
+    showStudentInfo(QuizInfo, pos);
+}
+
+void deleteStudentUsingID(stQuizInfo &QuizInfo, string ID)
+{
+    int pos = SearchPostionStudent(QuizInfo, ID);
+    if (pos == -1)
+    {
+        cout << "the student is not found !!!\n";
+        return;
+    }
+    for (int i = pos; i < QuizInfo.NumOfStudent - 1; i++)
+    {
+        QuizInfo.StudentInfo[i] = QuizInfo.StudentInfo[i + 1];
+    }
+
+    QuizInfo.NumOfStudent--;
+
+    cout << tab(7) << "Deleted successfully\n";
+}
+
+bool AskIfSureDeleteStudent(stQuizInfo &QuizInfo, string ID)
+{
+
+    char sure = 'y';
+
+    displayInfoStudentUsingID(QuizInfo, ID);
+
+    cout << "\nare you sure you want to delete student [y/n]? ";
+    cin >> sure;
+    while (sure == 'Y' || sure == 'y')
+    {
+        return true;
+    }
+    return false;
+}
+
+void Game()
+{
+    stQuizInfo QuizInfo;
+    char backOprions = 'n';
+
+    bool IsQuizExist = false;
+    bool DidStudentTakeExam = false;
+    do
+    {
+        system("cls");
+        enSelectionList SelectionList = getSelectionList();
+
+        switch (SelectionList)
+
+        {
+        case enSelectionList::enGenerateQuiz:
+            QuizInfo = ChoiseInfoQuiz();
+            IsQuizExist = true;
+            break;
+        case enSelectionList::enQuizInfo:
+            if (IsQuizExist)
+            {
+                ShowQuizeInfo(QuizInfo);
+            }
+            else
+            {
+                cout << "there is no exam yet\n";
+            }
+            break;
+        case enSelectionList::enstartQuizz:
+            if (IsQuizExist)
+            {
+                startQuizz(QuizInfo);
+                DidStudentTakeExam = true;
+            }
+            else
+            {
+                cout << "there is no exam yet\n";
+            }
+
+            break;
+        case enSelectionList::displayAllstudent:
+            if (IsQuizExist && DidStudentTakeExam)
+            {
+                displayMarksAllStudent(QuizInfo);
+            }
+            else
+            {
+                cout << "there is no exam yet\n";
+            }
+            break;
+        case enSelectionList::quiryUsingID:
+            if (IsQuizExist && DidStudentTakeExam)
+            {
+                string Id = enterIdStudent("Enter the student ID whose info you want to view : ");
+                displayInfoStudentUsingID(QuizInfo, Id);
+            }
+            else
+            {
+                cout << "there is no exam yet\nor\nNo students have taken exams yet.\n";
+            }
+
+            break;
+        case enSelectionList::DeletStudentUsingID:
+
+            if (IsQuizExist && DidStudentTakeExam)
+            {
+                string Id = enterIdStudent("Enter the student ID you want to delete  : ");
+                if (AskIfSureDeleteStudent(QuizInfo, Id))
+                {
+                    deleteStudentUsingID(QuizInfo, Id);
+                }
+            }
+            else
+            {
+                cout << "There are no students yet.\n";
+            }
+            break;
+        case enSelectionList::Exit:
+
+            return;
+
+            break;
+        default:
+
+            QuizInfo = ChoiseInfoQuiz();
+            IsQuizExist = true;
+            break;
+        }
+
+        cout << "do you want to return to proivse options [y/n] ";
+        cin >> backOprions;
+
+    } while (backOprions == 'y' || backOprions == 'Y');
 }
 
 int main()
 {
+
     srand((unsigned)(time(NULL)));
-    game();
+
+    Game();
 }
