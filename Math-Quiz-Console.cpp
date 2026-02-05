@@ -5,6 +5,11 @@
 #include <algorithm>
 #include <fstream>
 #include <vector>
+#include <iomanip>
+
+#include <thread> // sleep_for
+#include <chrono> // seconds
+// #include <windows.h> // system("cls")
 
 using namespace std;
 enum enlevels
@@ -23,15 +28,98 @@ enum enOpType
     mix = 5
 };
 
-struct stGameInfo
+struct stStudentInfo
 {
 
+    string FullName;
+    int Age;
+    string ID;
+    bool six;
+    int TotalMark = 0;
+};
+
+struct stQustionInfo
+{
+    short QuestionNumber = 0;
+    int FirstNum = 0;
+    int SecondNum = 0;
+    enlevels Questionlevel = enlevels::easy;
+    enOpType QuestionOPtype = enOpType::add;
+    int correctAnswer = 0;
+    int StudentAnswer = 0;
+    bool isStudentAnswerCorrect = true;
+};
+
+struct stQuizInfo
+{
+
+    stQustionInfo Qustion[100];
+    stStudentInfo StudentInfo[100];
     short NumOfQuestion = 0;
-    enlevels level;
-    enOpType OPtype;
+    short NumOfStudent = 0;
+    enlevels Quizlevel = enlevels::easy;
+    enOpType QuizOPtype = enOpType::add;
     short NumOfRightAnswer = 0;
     short NumOfWrongAnswer = 0;
+    bool IsPass = true;
 };
+
+// functions of strudent info
+
+string getStudentName()
+{
+    string FullName;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout << "enter your FullName : ";
+    getline(cin, FullName);
+
+    return FullName;
+}
+
+int getStudentAge()
+{
+    int age = 18;
+    cout << "enter your age (>18) : ";
+    cin >> age;
+    while (age <= 18)
+    {
+        cout << "\nplease enter age > 18 : ";
+        cin >> age;
+    }
+    return age;
+}
+
+string getStusentId()
+{
+    string Id;
+    cout << "enter your Id : ";
+    cin >> Id;
+    return Id;
+}
+
+bool getStudentSix()
+{
+
+    bool six = true;
+    cout << "enter your six (male[1] and female[0])  1/0: ";
+    cin >> six;
+    return six;
+}
+
+int HowManyStudent()
+{
+    int NumOfStudent = 1;
+
+    do
+    {
+
+        cout << "How many students do you want to teach them?[1:100] ";
+        cin >> NumOfStudent;
+
+    } while (NumOfStudent < 0 && NumOfStudent > 100);
+
+    return NumOfStudent;
+}
 
 int RandomNumber(int form, int to)
 {
@@ -42,17 +130,17 @@ int RandomNumber(int form, int to)
     return randomNum;
 }
 
-int enterAnswer()
+int getStudentAnswer()
 {
-    int number;
+    int number = 0;
     cin >> number;
     return number;
 }
 
-int howManyQuestion(string message)
+int howManyQuestion()
 {
     int number;
-    cout << message << endl;
+    cout << "how many questions you want to answer ? ";
     cin >> number;
 
     return number;
@@ -76,19 +164,29 @@ int enterOpType()
     return number;
 }
 
-enlevels getyourLevelchoise(int num)
+string tab(int numoftab)
 {
-
-    return enlevels(num);
+    string tab = "";
+    while (numoftab--)
+    {
+        tab += "    ";
+    }
+    return tab;
 }
 
-enOpType getyourOpTypechoise(int num)
+enlevels getLevelQuiz()
+{
+
+    return enlevels(enterQuestionLevel());
+}
+
+enOpType getyOpTypeQuiz(int num)
 {
 
     return enOpType(num);
 }
 
-int calactExptation(int num, int num2, enOpType op)
+int CalculateExpression(int num, int num2, enOpType op)
 {
     switch (op)
     {
@@ -103,24 +201,19 @@ int calactExptation(int num, int num2, enOpType op)
     }
 }
 
-enOpType whatoptypeplayerchoise(enOpType Optype)
+enOpType whatOptypeOfQuestion(enOpType Optype)
 {
-    switch (Optype)
+    if (Optype == enOpType::mix)
     {
-    case enOpType::add:
-        return enOpType::add;
-    case enOpType::divi:
-        return enOpType::divi;
-    case enOpType::mul:
-        return enOpType::mul;
-    case enOpType::sub:
-        return enOpType::sub;
-    case enOpType::mix:
-        return getyourOpTypechoise(RandomNumber(1, 4));
+        return getyOpTypeQuiz(RandomNumber(1, 4));
+    }
+    else
+    {
+        return Optype;
     }
 }
 
-string Opname(enOpType op)
+string getOpSymbol(enOpType op)
 {
     string opetor[5] = {"+", "-", "*", "/", "mix"};
     return (opetor[op - 1]);
@@ -132,9 +225,9 @@ string LevelNume(enlevels enlevel)
     return (opetor[enlevel - 1]);
 }
 
-int giveNumAccordingLevel(enlevels level)
+int getNumAccordingLevel(enlevels level)
 {
-    int num;
+    int num = 5;
     if (level == enlevels::easy)
     {
         num = RandomNumber(1, 10);
@@ -154,123 +247,225 @@ int giveNumAccordingLevel(enlevels level)
     return num;
 }
 
-bool AreAnswerCorrect(int result, int yourAnswr)
+bool isAnswerCorrect(int correctAnswer, int StudentAnswr)
 {
-    return (result == yourAnswr);
+    return (correctAnswer == StudentAnswr);
 }
 
-void showQuestion(int num1, int num2, enOpType op, int numOfQuestion)
+void showQuestion(stQustionInfo QustionInfo, short numQuestion)
 {
-    string charOp = Opname(op);
+    string symbolOp = getOpSymbol(QustionInfo.QuestionOPtype);
     cout << endl
-         << "the question No" << numOfQuestion << endl
-         << num1 << endl
-         << charOp << endl
-         << num2 << endl;
+         << "the question No" << numQuestion + 1 << endl
+         << QustionInfo.FirstNum << endl
+         << symbolOp << endl
+         << QustionInfo.SecondNum << endl
+         << "_______________\n";
 }
 
-void getQuestion(enlevels level, enOpType Optype, int &result, int numOfQuestion)
+void ViewQuestionStatus(stQustionInfo QustionInfo)
 {
-    int num1 = giveNumAccordingLevel(level);
-    int num2 = giveNumAccordingLevel(level);
-    enOpType op = whatoptypeplayerchoise(Optype);
-    result = calactExptation(num1, num2, op);
-    showQuestion(num1, num2, op, numOfQuestion);
-}
-
-void ShowWhanCorrectAnswered()
-{
-    cout << "your answer is correct :)";
-    system("color 2f");
-}
-
-void ShowWhanInCorrectAnswered(int corectAnswer)
-{
-    cout << "your answer is incorrect :(" << endl;
-    system("color 4f");
-    cout << "the correct answer is " << corectAnswer;
-}
-
-bool arepassQuestion(stGameInfo gameInfo)
-{
-    return (gameInfo.NumOfRightAnswer >= gameInfo.NumOfWrongAnswer);
-}
-
-void signOfGame(bool arepass)
-{
-    if (arepass)
+    if (QustionInfo.isStudentAnswerCorrect)
     {
-        cout << endl
-             << endl
-             << endl
-             << "\n-------------------------------------------------------" << endl;
-        cout << "               you passed the question :)" << endl;
-        cout << "---------------------------------------------------------" << endl;
+        cout << "your answer is correct :)";
         system("color 2f");
     }
     else
     {
-        cout << endl
-             << endl
-             << endl
-             << "\n--------------------------------------------------------" << endl;
-        cout << "                you failed the question :(" << endl;
-        cout << "\a--------------------------------------------------------" << endl;
+        cout << "your answer is incorrect :(" << endl;
         system("color 4f");
+        cout << "the correct answer is " << QustionInfo.correctAnswer;
     }
 }
 
-void showFainalQuestionResult(stGameInfo gameInfo)
+bool ispassQuiz(stQuizInfo &QuizInfo)
+{
+    return (QuizInfo.IsPass = (QuizInfo.NumOfRightAnswer >= QuizInfo.NumOfWrongAnswer));
+}
+
+void signOfFinalQuiz(bool ispass)
+{
+    cout << endl
+         << tab(5) << string(60, '-') << endl;
+
+    if (ispass)
+    {
+        cout << tab(7) << left << setw(30) << "Result"
+             << " : You passed the quiz :)" << endl;
+        system("color 2f");
+    }
+    else
+    {
+        cout << tab(7) << left << setw(30) << "Result"
+             << " : You failed the quiz :(" << endl;
+        system("color 4f");
+    }
+
+    cout << tab(5) << string(60, '-') << endl;
+}
+
+string NameOfSix(bool Six)
+{
+    if (Six)
+    {
+        return "male";
+    }
+    else
+    {
+        return "female";
+    }
+}
+
+void showStudentInfo(stStudentInfo StusentInfo, int numOfStudent)
+{
+    cout << "\n"
+         << tab(5) << " -------------------- Student [" << numOfStudent + 1 << "] -------------------- \n\n";
+
+    cout << tab(7) << left << setw(15) << "Full Name" << " : " << StusentInfo.FullName << endl;
+    cout << tab(7) << left << setw(15) << "Age" << " : " << StusentInfo.Age << endl;
+    cout << tab(7) << left << setw(15) << "ID" << " : " << StusentInfo.ID << endl;
+    cout << tab(7) << left << setw(15) << "Gender" << " : " << NameOfSix(StusentInfo.six) << endl;
+
+    cout << "\n"
+         << tab(5) << " -------------------------------------------------------\n";
+}
+
+void ShowFinalQuizResult(stQuizInfo QuizInfo, int numStudent)
 {
 
-    signOfGame(arepassQuestion(gameInfo));
+    signOfFinalQuiz(ispassQuiz(QuizInfo));
+    showStudentInfo(QuizInfo.StudentInfo[numStudent], numStudent);
 
     cout << endl
-         << "-------------------------------------------------------\n";
-    cout << "             num of question  = " << gameInfo.NumOfQuestion << endl;
-    cout << "             Type of opartor  = " << Opname(gameInfo.OPtype) << endl;
-    cout << "             question level  = " << LevelNume(gameInfo.level) << endl;
-    cout << "             num of right ans = " << gameInfo.NumOfRightAnswer << endl;
-    cout << "             num of wrong ans = " << gameInfo.NumOfWrongAnswer << endl;
-    cout << endl
-         << "-------------------------------------------------------\n";
+         << tab(5) << string(55, '-') << "\n";
+    cout << tab(7) << left << setw(20) << "Number of Questions"
+         << " : " << QuizInfo.NumOfQuestion << endl;
+
+    cout << tab(7) << left << setw(20) << "Operator Type"
+         << " : " << getOpSymbol(QuizInfo.QuizOPtype) << endl;
+
+    cout << tab(7) << left << setw(20) << "Question Level"
+         << " : " << LevelNume(QuizInfo.Quizlevel) << endl;
+
+    cout << tab(7) << left << setw(20) << "Right Answers"
+         << " : " << QuizInfo.NumOfRightAnswer << endl;
+
+    cout << tab(7) << left << setw(20) << "Wrong Answers"
+         << " : " << QuizInfo.NumOfWrongAnswer << endl;
+
+    cout << tab(5) << string(55, '-') << "\n";
+}
+
+stStudentInfo getStudentInfo(stStudentInfo &StusentInfo)
+{
+    stStudentInfo StudentInfo;
+    StudentInfo.FullName = getStudentName();
+    StudentInfo.Age = getStudentAge();
+    StudentInfo.ID = getStusentId();
+    StudentInfo.six = getStudentSix();
+
+    return StudentInfo;
+}
+
+stQustionInfo GenerateQuestion(enlevels level, enOpType optype, int i)
+{
+    stQustionInfo QustionInfo;
+
+    QustionInfo.FirstNum = getNumAccordingLevel(level);
+    QustionInfo.SecondNum = getNumAccordingLevel(level);
+    QustionInfo.QuestionOPtype = getyOpTypeQuiz(whatOptypeOfQuestion(optype));
+    QustionInfo.correctAnswer = CalculateExpression(QustionInfo.FirstNum, QustionInfo.SecondNum, QustionInfo.QuestionOPtype);
+    showQuestion(QustionInfo, i);
+    QustionInfo.StudentAnswer = getStudentAnswer();
+    QustionInfo.isStudentAnswerCorrect = isAnswerCorrect(QustionInfo.correctAnswer, QustionInfo.StudentAnswer);
+
+    return QustionInfo;
+}
+
+void UpdataToNumOfCorrectAnsAndnot(stQuizInfo &QuizInfo, short numQuestion)
+{
+
+    if (QuizInfo.Qustion[numQuestion].isStudentAnswerCorrect)
+    {
+        QuizInfo.NumOfRightAnswer++;
+    }
+    else
+    {
+        QuizInfo.NumOfWrongAnswer++;
+    }
+}
+
+void GenerateQuiz(stQuizInfo &QuizInfo)
+{
+
+    for (int i = 0; i < QuizInfo.NumOfQuestion; i++)
+    {
+
+        QuizInfo.Qustion[i] = GenerateQuestion(QuizInfo.Quizlevel, QuizInfo.QuizOPtype, i);
+        ViewQuestionStatus(QuizInfo.Qustion[i]);
+        UpdataToNumOfCorrectAnsAndnot(QuizInfo, i);
+    }
+}
+
+void displayMarksAllStudent(stQuizInfo QuizInfo)
+{
+    cout << left << setw(20) << "Name"
+         << setw(10) << "Marks"
+         << setw(15) << "ID"
+         << setw(10) << "Gender" << endl;
+
+    cout << string(55, '-') << endl;
+
+    for (int i = 0; i < QuizInfo.NumOfStudent; i++)
+    {
+        cout << left << setw(20) << QuizInfo.StudentInfo[i].FullName
+             << setw(10) << QuizInfo.StudentInfo[i].TotalMark
+             << setw(15) << QuizInfo.StudentInfo[i].ID
+             << setw(10) << NameOfSix(QuizInfo.StudentInfo[i].six)
+             << endl;
+    }
 }
 
 void game()
 {
-    stGameInfo gameInfo;
-    int QuestionNum = howManyQuestion("how many questions you want to answer ?");
-    enlevels level = getyourLevelchoise(enterQuestionLevel());
-    enOpType Optype = getyourOpTypechoise(enterOpType());
-    int result;
-    for (int i = 1; i <= QuestionNum; i++)
+    stQuizInfo QuizInfo;
+
+    cout << "        enter  Quiz info        " << endl;
+    QuizInfo.NumOfStudent = HowManyStudent();
+    QuizInfo.NumOfQuestion = howManyQuestion();
+    QuizInfo.QuizOPtype = getyOpTypeQuiz(enterOpType());
+    QuizInfo.Quizlevel = getLevelQuiz();
+
+    system("cls");
+
+    for (int i = 0; i < QuizInfo.NumOfStudent; i++)
     {
 
-        result = 0;
-        getQuestion(level, Optype, result, i);
-        int yourAnswr = enterAnswer();
+        QuizInfo.StudentInfo[i] = getStudentInfo(QuizInfo.StudentInfo[i]);
+        GenerateQuiz(QuizInfo);
+        QuizInfo.StudentInfo[i].TotalMark = QuizInfo.NumOfRightAnswer;
+        ShowFinalQuizResult(QuizInfo, i);
+        QuizInfo.NumOfRightAnswer = 0;
+        QuizInfo.NumOfWrongAnswer = 0;
 
-        if (AreAnswerCorrect(result, yourAnswr))
-        {
-            gameInfo.NumOfRightAnswer++;
+        this_thread::sleep_for(chrono::seconds(5)); // يوقف خمس ثواني
 
-            ShowWhanCorrectAnswered();
-        }
-        else
-        {
-            gameInfo.NumOfWrongAnswer++;
-            ShowWhanInCorrectAnswered(result);
-        }
+        system("cls");
     }
 
-    gameInfo.level = level;
-    gameInfo.OPtype = Optype;
-    gameInfo.NumOfQuestion = QuestionNum;
+    char display = 'y';
 
-    showFainalQuestionResult(gameInfo);
+    cout << "do you want display marks all students ? ";
+    cin >> display;
+    if (display == 'y' || display == 'Y')
+    {
+
+        displayMarksAllStudent(QuizInfo);
+    }
 }
 
 int main()
 {
+    srand((unsigned)(time(NULL)));
     game();
 }
